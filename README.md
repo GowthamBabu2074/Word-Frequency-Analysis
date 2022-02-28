@@ -3,7 +3,8 @@ Thanks to snsscrape for creating such a wonderful libraray for scraping data fro
 
 The libraray can be installed by using 
 <code> <b>pip install snscrape </b> </code>
-hivist/snscrape/blob/master/snscrape/modules/twitter.py
+and the documantaion can be found at 
+https://github.com/JustAnotherArchivist/snscrape/blob/master/snscrape/modules/twitter.py
 
 Thanks to Alex the Analyst for visualizing textual data.
 
