@@ -5,4 +5,4 @@ The libraray can be installed by using
 pip install snscrape 
 and the documentaion can be found at https://github.com/JustAnotherArchivist/snscrape/blob/master/snscrape/modules/twitter.py
 
-and thanks to Alex the Analyst for visualizing textual data.
+Thanks to Alex the Analyst for visualizing textual data.
