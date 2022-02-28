@@ -1,0 +1,310 @@
+---
+title: "Tweet analysis"
+output: 
+    pdf_document :
+      latex_engine : xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(dplyr)
+library(igraph)
+library(ggplot2)
+library(dplyr)
+library(stringr)
+library(tidytext)
+library(janeaustenr)
+library(ggplot2)
+library(tidyr)
+library(igraph)
+library(ggraph)
+```
+
+
+```{r}
+a = read.csv('ZelenskyyUa_tweets.csv')
+a$year = substr(a$Datetime, 1, 4)
+a = a[ which(a$Language=='en' & a$year == 2022),]
+a
+```
+
+```{r}
+
+string = c()
+for (i in range(1,dim(a)[1])){
+  string = c(string, a$Text)
+}
+
+w = c()
+for (j in string){
+  b = unlist(strsplit(j, ' '))
+  d = c()
+  for (i in b){
+    if ((substr(i, 1, 1)) != '@'){
+    d = c(d, i)}}
+  d = str_c(d, collapse = " ")
+w = c(w, d)
+}
+
+df1 = data.frame()
+for (k in w){
+  df1 <- rbind(df1, k)
+}
+
+
+df1$year = 2022
+colnames(df1) <- c("word", "year")
+
+#removing punctuations
+df1$word = gsub('[[:punct:] ]+',' ',df1$word)
+
+write.csv(df1, 'zen_words.csv')
+```
+
+
+```{r}
+df11 = read.csv('zen_words.csv')
+df11
+```
+```{r}
+df11 = df11 %>%
+  unnest_tokens(word, word)
+
+df11
+```
+
+
+```{r}
+df11 = df11 %>%
+  unnest_tokens(word, word)%>%
+  group_by(word)%>%
+  summarise(count = n())%>%
+  arrange(desc(count))
+df11
+```
+
+```{r}
+a <- df11 %>%
+  anti_join(stop_words)
+
+head(a, 10)
+```
+
+
+```{r}
+a$total_sum = sum(a$count)
+a = a %>% 
+  mutate(rank = row_number(), `term frequency` = count/total_sum)
+a
+```
+
+#Plot histogram of word frequencies 
+```{r}
+a$term_frequency = unlist(a$term_frequency)
+ggplot(a, aes(`term frequency`, fill = word)) +
+  geom_histogram(color = 'black', show.legend = FALSE) 
+```
+
+#Use Zipf’s law and plot log-log plots of word frequencies and rank
+```{r}
+lm(log10(`term frequency`) ~ log10(rank), data = a)
+```
+
+
+```{r}
+log_plot = a %>% 
+  ggplot(aes(rank, `term frequency`)) + 
+  geom_abline(intercept = -1.212 , slope = -0.763, 
+              color = "gray50", linetype = 2) +
+  geom_line(size = 1.1, alpha = 0.8, show.legend = FALSE) + 
+  scale_x_log10() +
+  scale_y_log10()
+
+log_plot
+```
+
+
+# Create bigram network graphs for each year
+
+#forming bi-grams with two words, dividing the words and removing the stop words for the given words.
+```{r}
+df11 = read.csv('zen_words.csv')
+df11_bigrams <- df11 %>%
+  unnest_tokens(bigram, word, token = "ngrams", n = 2)%>%
+  count(bigram, sort = T)%>%
+  separate(bigram, c('word1', 'word2'), sep = ' ') %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word)
+
+df11_bigrams
+```
+
+#at least 10 connections
+```{r}
+connections <- df11_bigrams %>%
+  filter(n > 10) %>%
+  graph_from_data_frame()
+connections
+```
+
+
+```{r}
+set.seed(2020)
+
+a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+
+ggraph(connections, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.07, 'inches')) +
+  geom_node_point(color = "lightblue", size = 5) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+  theme_void()
+```
+
+
+```{r}
+a = read.csv('KremlinRussia_E_tweets.csv')
+a$year = substr(a$Datetime, 1, 4)
+a = a[ which(a$Languages=='en' & a$year == 2022),]
+a
+```
+
+```{r}
+
+string = c()
+for (i in range(1,dim(a)[1])){
+  string = c(string, a$Text)
+}
+
+w = c()
+for (j in string){
+  b = unlist(strsplit(j, ' '))
+  d = c()
+  for (i in b){
+    if ((substr(i, 1, 1)) != '@'){
+    d = c(d, i)}}
+  d = str_c(d, collapse = " ")
+w = c(w, d)
+}
+
+df1 = data.frame()
+for (k in w){
+  df1 <- rbind(df1, k)
+}
+
+
+df1$year = 2022
+colnames(df1) <- c("word", "year")
+
+#removing punctuations
+df1$word = gsub('[[:punct:] ]+',' ',df1$word)
+
+write.csv(df1, 'kren_words.csv')
+```
+
+
+```{r}
+df11 = read.csv('kren_words.csv')
+df11
+```
+
+```{r}
+df11 = df11 %>%
+  unnest_tokens(word, word)
+
+df11
+```
+
+
+```{r}
+df11 = df11 %>%
+  unnest_tokens(word, word)%>%
+  group_by(word)%>%
+  summarise(count = n())%>%
+  arrange(desc(count))
+df11
+```
+
+
+```{r}
+a <- df11 %>%
+  anti_join(stop_words)
+
+head(a, 10)
+```
+
+
+#Show top 10 words by the highest value of word frequency
+```{r}
+a$total_sum = sum(a$count)
+a = a %>% 
+  mutate(rank = row_number(), `term frequency` = count/total_sum)
+a
+```
+
+#Plot histogram of word frequencies 
+```{r}
+a$term_frequency = unlist(a$term_frequency)
+ggplot(a, aes(`term frequency`, fill = word)) +
+  geom_histogram(color = 'black', show.legend = FALSE) 
+```
+
+
+#Use Zipf’s law and plot log-log plots of word frequencies and rank 
+```{r}
+lm(log10(`term frequency`) ~ log10(rank), data = a)
+```
+
+
+```{r}
+log_plot = a %>% 
+  ggplot(aes(rank, `term frequency`)) + 
+  geom_abline(intercept = -1.3984 , slope = -0.6617, 
+              color = "gray50", linetype = 2) +
+  geom_line(size = 1.1, alpha = 0.8, show.legend = FALSE) + 
+  scale_x_log10() +
+  scale_y_log10()
+
+log_plot
+```
+
+# Create bigram network graphs
+
+#forming bi-grams with two words, dividing the words and removing the stop words for the given words.
+```{r}
+df11 = read.csv('zen_words.csv')
+df11_bigrams <- df11 %>%
+  unnest_tokens(bigram, word, token = "ngrams", n = 2)%>%
+  count(bigram, sort = T)%>%
+  separate(bigram, c('word1', 'word2'), sep = ' ') %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word)
+
+df11_bigrams
+```
+
+#at least 10 connections
+```{r}
+connections <- df11_bigrams %>%
+  filter(n > 10) %>%
+  graph_from_data_frame()
+connections
+```
+
+
+```{r}
+set.seed(2020)
+
+a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+
+ggraph(connections, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.07, 'inches')) +
+  geom_node_point(color = "lightblue", size = 5) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+  theme_void()
+```
